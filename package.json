@@ -1,0 +1,5 @@
+{
+  "name": "brace-basilico",
+  "private": true,
+  "engines": { "node": ">=20" }
+}

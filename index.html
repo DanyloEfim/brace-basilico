@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brace &amp; Basilico Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* layout: restaurant card on the left, live assistant on the right; stacks on phones with the chat first */
+  --oven:#15110e;      /* page background: inside of a wood oven at night */
+  --ember:#211a15;     /* panels */
+  --flour:#f3ece0;     /* main text */
+  --ash:#a89a88;       /* secondary text */
+  --tomato:#e0492f;    /* accent */
+  --basil:#5f9a4c;     /* confirmations */
+  --line:#3a2f27;
+  --display:"Fraunces", Georgia, serif;
+  --body:"Work Sans", system-ui, -apple-system, Segoe UI, sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--oven);color:var(--flour);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:20px;max-width:1180px;margin:0 auto;padding:20px 16px;min-height:100%}
+@media (max-width:860px){.wrap{grid-template-columns:1fr}.chat{order:-1;height:78vh}}
+.card,.chat{background:var(--ember);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.hero{position:relative;aspect-ratio:9/7;background:#000}
+.hero img{width:100%;height:100%;object-fit:cover;display:block;opacity:.92}
+.hero .brand{position:absolute;left:0;right:0;bottom:0;padding:18px 20px;background:linear-gradient(transparent,rgba(10,8,6,.92))}
+.brand h1{font-family:var(--display);font-weight:700;font-size:34px;margin:0;line-height:1.1;text-wrap:balance}
+.brand p{margin:4px 0 0;color:var(--ash)}
+.info{padding:18px 20px;display:grid;gap:18px}
+.info h2{font-family:var(--display);font-weight:500;font-size:19px;margin:0 0 8px;color:var(--flour)}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0}
+.facts dt{color:var(--ash)}
+.facts dd{margin:0}
+.menu{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.menu li{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding-bottom:8px;border-bottom:1px dashed var(--line)}
+.menu b{font-weight:600}
+.menu .p{font-variant-numeric:tabular-nums;color:var(--flour)}
+.menu small{grid-column:1/-1;color:var(--ash)}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:99px;border:1px solid var(--line);color:var(--ash);margin-left:6px;vertical-align:1px}
+.demo{font-size:12px;color:var(--ash)}
+.chat{display:flex;flex-direction:column;min-height:560px;height:calc(100vh - 40px);max-height:860px}
+.chat header{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--basil);box-shadow:0 0 0 4px rgba(95,154,76,.18)}
+.chat header b{font-family:var(--display);font-weight:500;font-size:18px}
+.chat header span{color:var(--ash);font-size:13px}
+.log{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:82%;padding:10px 14px;border-radius:14px;white-space:pre-wrap;word-wrap:break-word}
+.bot{background:#2b221b;border-top-left-radius:4px;align-self:flex-start}
+.me{background:var(--tomato);color:#fff;border-top-right-radius:4px;align-self:flex-end}
+.booking{align-self:stretch;border:1px solid var(--basil);background:rgba(95,154,76,.1);border-radius:12px;padding:12px 14px}
+.booking h3{margin:0 0 6px;font-size:14px;color:#9fd18b;font-weight:600}
+.booking dl{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:0;font-size:14px}
+.booking dt{color:var(--ash)}.booking dd{margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px;padding:0 18px 12px}
+.chips button{font:inherit;font-size:13px;color:var(--flour);background:transparent;border:1px solid var(--line);border-radius:99px;padding:6px 12px;cursor:pointer}
+.chips button:hover{border-color:var(--tomato)}
+form{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}
+input#q{flex:1;font:inherit;color:var(--flour);background:var(--oven);border:1px solid var(--line);border-radius:10px;padding:11px 14px}
+input#q::placeholder{color:#7d7064}
+button#send{font:inherit;font-weight:600;background:var(--tomato);color:#fff;border:0;border-radius:10px;padding:0 18px;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--tomato);outline-offset:2px}
+button:disabled{opacity:.5;cursor:default}
+.notice{margin:0 18px 12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;color:var(--ash);font-size:13px;display:none}
+@media (prefers-reduced-motion:no-preference){.msg,.booking{animation:in .18s ease-out}@keyframes in{from{transform:translateY(4px);opacity:.4}to{transform:none;opacity:1}}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="card" aria-label="Restaurant">
+    <div class="hero">
+      <img alt="Pizzaiolo spinning dough in front of the wood oven" src="hero.jpg">
+      <div class="brand"><h1>Brace &amp; Basilico</h1><p>Wood-fired Neapolitan pizza · Napoli</p></div>
+    </div>
+    <div class="info">
+      <div>
+        <h2>Visit us</h2>
+        <dl class="facts">
+          <dt>Address</dt><dd>Vicolo del Forno 12, Napoli</dd>
+          <dt>Open</dt><dd>Tue–Sun 12:00–15:00, 19:00–23:30</dd>
+          <dt>Closed</dt><dd>Mondays</dd>
+          <dt>Delivery</dt><dd>19:00–23:00, within 3 km, €2.50</dd>
+        </dl>
+      </div>
+      <div>
+        <h2>From the oven</h2>
+        <ul class="menu" id="menu"></ul>
+      </div>
+      <p class="demo">Demo restaurant for a portfolio. The assistant is live AI; bookings appear in the chat and are not sent anywhere.</p>
+    </div>
+  </section>
+
+  <section class="chat" aria-label="Assistant">
+    <header><div class="dot" aria-hidden="true"></div><div><b>Brace &amp; Basilico assistant</b><br><span>Menu, hours, delivery and table bookings · any language</span></div></header>
+    <div class="log" id="log" aria-live="polite"></div>
+    <p class="notice" id="notice"></p>
+    <div class="chips" id="chips">
+      <button type="button">What do you recommend for two?</button>
+      <button type="button">Prenota un tavolo per 4 sabato alle 20:30</button>
+      <button type="button">Are you open on Monday?</button>
+      <button type="button">Is there anything without lactose?</button>
+    </div>
+    <form id="f"><label for="q" class="demo" style="position:absolute;left:-9999px">Message</label><input id="q" autocomplete="off" placeholder="Ask about the menu or book a table…"><button id="send" type="submit">Send</button></form>
+  </section>
+</div>
+
+<script>
+const MENU=[
+ {n:"Margherita",p:6.5,d:"San Marzano tomato, fior di latte, basil, olive oil",t:["vegetarian"]},
+ {n:"Marinara",p:5.5,d:"Tomato, garlic, oregano, olive oil",t:["vegan","no lactose"]},
+ {n:"Diavola",p:8.5,d:"Tomato, fior di latte, spicy salami, chili oil",t:["spicy"]},
+ {n:"Bufala e Pomodorini",p:10,d:"Buffalo mozzarella, yellow and red cherry tomatoes, basil",t:["vegetarian"]},
+ {n:"Salsiccia e Friarielli",p:9.5,d:"Fior di latte, Neapolitan sausage, friarielli greens",t:[]},
+ {n:"Montanara",p:7,d:"Fried and baked dough, tomato, parmigiano, basil",t:["vegetarian"]},
+ {n:"Tiramisù della casa",p:5,d:"Mascarpone, coffee, cocoa",t:["dessert"]},
+ {n:"House red, glass",p:4.5,d:"Aglianico from Campania",t:["drink"]}
+];
+const eur=v=>"€"+v.toFixed(2);
+document.getElementById("menu").innerHTML=MENU.map(m=>`<li><b>${m.n}${m.t.map(x=>`<span class="tag">${x}</span>`).join("")}</b><span class="p">${eur(m.p)}</span><small>${m.d}</small></li>`).join("");
+
+const log=document.getElementById("log"),q=document.getElementById("q"),send=document.getElementById("send"),notice=document.getElementById("notice");
+const history=[];
+function bubble(text,who){const d=document.createElement("div");d.className="msg "+who;d.textContent=text;log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
+function bookingCard(b){const d=document.createElement("div");d.className="booking";d.innerHTML=`<h3>Booking confirmed · ${b.code}</h3><dl><dt>Name</dt><dd></dd><dt>Date</dt><dd></dd><dt>Time</dt><dd></dd><dt>Guests</dt><dd></dd></dl>`;const dd=d.querySelectorAll("dd");[b.name,b.date,b.time,String(b.guests)].forEach((v,i)=>dd[i].textContent=v);log.appendChild(d);log.scrollTop=log.scrollHeight}
+bubble("Ciao! I'm the Brace & Basilico assistant. Ask me about our pizzas, opening hours or delivery, or I can book you a table. I speak your language.","bot");
+let busy=false;
+async function ask(text){
+ text=text.trim().slice(0,500);
+ if(busy||!text)return;
+ busy=true;send.disabled=true;document.getElementById("chips").style.display="none";notice.style.display="none";
+ bubble(text,"me");history.push({role:"user",content:text});
+ const out=bubble("…","bot");
+ try{
+  const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:history.slice(-16)})});
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(data.error||"error");
+  out.textContent=data.reply||"Sorry, could you say that again?";
+  history.push({role:"assistant",content:out.textContent});
+  if(data.booking)bookingCard(data.booking);
+ }catch(e){
+  out.textContent=String(e.message).includes("busy")?"I'm a bit busy right now. Please try again in a minute.":"Something went wrong. Please try again.";
+  history.pop();
+ }finally{busy=false;send.disabled=false;q.focus()}
+}
+document.getElementById("f").addEventListener("submit",e=>{e.preventDefault();const t=q.value;q.value="";ask(t)});
+document.querySelectorAll("#chips button").forEach(b=>b.addEventListener("click",()=>ask(b.textContent)));
+</script>
+</body>
+</html>
